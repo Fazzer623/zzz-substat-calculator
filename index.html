@@ -50,6 +50,20 @@
       outline:none; transition:border .12s ease, box-shadow .12s ease, background .12s ease;
     }
     input:focus{border-color:var(--accent); box-shadow:0 0 0 2px rgba(108,140,255,.25)}
+    .select-wrapper{position: relative;}
+    .select-wrapper::after{
+      content: "▼";
+      font-size: 1rem;
+      position: absolute; top: 25%; right: 10px;
+      pointer-events: none;
+    }
+    select{
+      width:100%; padding:9px 10px; margin-top:4px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.08); background:var(--card2); color:var(--text);
+      outline:none; transition:border .12s ease, box-shadow .12s ease, background .12s ease;
+      --webkit-appearance: none; appearance: none;
+    }
+    select:focus{border-color:var(--accent); box-shadow:0 0 0 2px rgba(108,140,255,.25)}
 
     .actions{display:flex; justify-content:center; margin:24px 0}
     button{
@@ -86,8 +100,23 @@
       <div class="field"><label>Stat Screen ATK <span class="info" data-tip="ATK shown on your character sheet before combat-only buffs.">ⓘ</span></label><input type="number" id="atk" value="2900"></div>
       <div class="field"><label>Combat ATK% <span class="info" data-tip="Percent ATK buff applied only in combat. Multiplies stat-screen ATK, not flat buffs.">ⓘ</span></label><input type="number" id="atkPct" value="10"></div>
       <div class="field"><label>Combat Flat ATK <span class="info" data-tip="Flat ATK added in combat after ATK% scaling.">ⓘ</span></label><input type="number" id="flatAtk" value="1000"></div>
-      <div class="field"><label>Base Character ATK <span class="info" data-tip="Character's base ATK before gear. Used for ATK substat calculation.">ⓘ</span></label><input type="number" id="baseChar" value="929"></div>
-      <div class="field"><label>Base Weapon ATK <span class="info" data-tip="Weapon's base ATK. Added to character base for ATK substat scaling.">ⓘ</span></label><input type="number" id="baseWep" value="713"></div>
+      <div class="field">
+        <label>Base Character ATK <span class="info" data-tip="Character's base ATK before gear. Used for ATK substat calculation.">ⓘ</span></label>
+        <div class="select-wrapper">
+          <select id="char">
+            <option value="custom" selected="selected">-- Custom --</option>
+          </select>
+        </div>
+        <input type="number" id="baseChar" value="929">
+      </div>
+      <div class="field">
+        <label>Base Weapon ATK <span class="info" data-tip="Weapon's base ATK. Added to character base for ATK substat scaling.">ⓘ</span></label>
+        <div class="select-wrapper">
+          <select id="weapon">
+            <option value="custom" selected="selected">-- Custom --</option>
+          </select>
+        </div>
+        <input type="number" id="baseWep" value="713"></div>
     </div>
 
     <div class="card">
@@ -150,10 +179,76 @@
     `;
   }
 
+  function getAgents() {
+    fetch("https://api.hakush.in/zzz/data/character.json")
+      .then(data => data.json())
+      .then(data => {
+        for (const agentId in data) {
+          char.innerHTML += `<option value="${agentId}">${data[agentId].EN}</option>`
+        }
+      });
+  }
+
+  function getWeapons() {
+    fetch("https://api.hakush.in/zzz/data/weapon.json")
+      .then(data => data.json())
+      .then(data => {
+        for (const weaponId in data) {
+          weapon.innerHTML += `<option value="${weaponId}">${data[weaponId].EN}</option>`
+        }
+      });
+  }
+
   document.querySelectorAll('input').forEach((el) => {
     el.addEventListener('input', calculate);
   });
+
+  char.addEventListener('change', () => {
+    if (char.value == 'custom') {
+      baseChar.disabled = false;
+      return;
+    }
+
+    baseChar.disabled = true;
+    baseChar.value = '';
+    fetch(`https://api.hakush.in/zzz/data/en/character/${char.value}.json`)
+      .then(data => data.json())
+      .then(data => {
+        const level = 60;
+        let atk = data.Stats.Attack;
+        atk += (level - 1) * (data.Stats.AttackGrowth || 0) / 10000;
+        atk += (data.Level[Math.ceil(level / 10)].Attack || 0);
+        atk += (data.ExtraLevel[Math.ceil(level / 10)].Extra[12101].Value || 0);
+        baseChar.value = Math.floor(atk);
+        baseChar.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+  });
+
+  weapon.addEventListener('change', () => {
+    if (weapon.value == 'custom') {
+      baseWep.disabled = false;
+      return;
+    }
+
+    baseWep.disabled = true;
+    baseWep.value = '';
+    fetch(`https://api.hakush.in/zzz/data/en/weapon/${weapon.value}.json`)
+      .then(data => data.json())
+      .then(data => {
+        const level = 60;
+        let atk = data.BaseProperty.Value;
+        atk += Math.floor(
+          data.BaseProperty.Value * (data.Level[level].Rate || 0) / 10000
+          + data.BaseProperty.Value * (data.Stars[Math.floor((level - 1) / 10)].StarRate || 0) / 10000
+        );
+        baseWep.value = Math.floor(atk);
+        baseWep.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+  });
+
   calculate();
+  getAgents();
+  getWeapons();
 </script>
 </body>
 </html>
