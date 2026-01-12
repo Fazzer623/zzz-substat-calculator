@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ZZZ Substat Value Calculator</title>
+  <style>
+    :root{
+      --bg:#0e1020;
+      --card:#1a1e33;
+      --card2:#202552;
+      --accent:#6c8cff;
+      --accent2:#8fa3ff;
+      --text:#eef1ff;
+      --muted:#aab0ff;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; display:flex; justify-content:center;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #1b2050 0%, transparent 60%),
+                  radial-gradient(1000px 500px at 100% 0%, #141744 0%, transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    .wrap{width:100%; max-width:1100px; padding:28px 20px 60px}
+    h1{font-size:2rem; letter-spacing:.3px; margin:0 0 10px}
+    .subtitle{opacity:.75; margin-bottom:22px}
+
+    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08)), var(--card);
+      padding:16px; border-radius:var(--radius);
+      box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .card:hover{transform:translateY(-2px); box-shadow:0 14px 28px rgba(0,0,0,.45)}
+
+    h3{margin:0 0 10px; font-size:1.05rem; color:var(--accent2)}
+    label{font-size:.82rem; color:var(--muted)}
+    .info{display:inline-block; margin-left:6px; width:16px; height:16px; line-height:16px; text-align:center; border-radius:50%; background:rgba(108,140,255,.18); color:var(--accent2); font-size:.7rem; cursor:help; position:relative}
+    .info:hover::after{content:attr(data-tip); position:absolute; left:50%; transform:translateX(-50%); bottom:130%; background:#10142b; color:#fff; padding:8px 10px; border-radius:8px; white-space:nowrap; box-shadow:0 8px 18px rgba(0,0,0,.5); font-size:.72rem; z-index:10}
+    .info:hover::before{content:""; position:absolute; left:50%; transform:translateX(-50%); bottom:115%; border:6px solid transparent; border-top-color:#10142b}
+    .field{margin-bottom:10px}
+    input{
+      width:100%; padding:9px 10px; margin-top:4px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.08); background:var(--card2); color:var(--text);
+      outline:none; transition:border .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    input:focus{border-color:var(--accent); box-shadow:0 0 0 2px rgba(108,140,255,.25)}
+
+    .actions{display:flex; justify-content:center; margin:24px 0}
+    button{
+      padding:12px 28px; border:none; border-radius:999px; cursor:pointer;
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      color:white; font-weight:700; letter-spacing:.3px; font-size:.95rem;
+      box-shadow:0 8px 18px rgba(108,140,255,.45);
+      transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    button:hover{transform:translateY(-1px); box-shadow:0 12px 24px rgba(108,140,255,.55); filter:brightness(1.05)}
+    button:active{transform:translateY(0)}
+
+    .results{
+      margin-top:18px; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.1)), var(--card);
+      padding:16px; border-radius:var(--radius);
+      box-shadow:0 10px 24px rgba(0,0,0,.35);
+    }
+    .results h3{margin-top:8px}
+    .pill{display:inline-block; padding:4px 10px; border-radius:999px; background:rgba(108,140,255,.15); color:var(--accent2); font-size:.75rem}
+    .kpi{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:10px}
+    @media (max-width:700px){.kpi{grid-template-columns:1fr}}
+    .kpi .box{background:var(--card2); border-radius:12px; padding:12px; text-align:center}
+    .kpi .box b{font-size:1.2rem; color:var(--accent2)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ZZZ Relative Substat Value Calculator</h1>
+  <div class="subtitle">Compare how much damage you gain from one substat of ATK, Crit Rate, or Crit Damage.</div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>ATK Column</h3>
+      <div class="field"><label>Stat Screen ATK <span class="info" data-tip="ATK shown on your character sheet before combat-only buffs.">ⓘ</span></label><input id="atk" value="2600"></div>
+      <div class="field"><label>Combat ATK % (e.g. 18 = 18%) <span class="info" data-tip="Percent ATK buff applied only in combat. Multiplies stat-screen ATK, not flat buffs.">ⓘ</span></label><input id="atkPct" value="18"></div>
+      <div class="field"><label>Combat Flat ATK <span class="info" data-tip="Flat ATK added in combat after ATK% scaling.">ⓘ</span></label><input id="flatAtk" value="1200"></div>
+      <div class="field"><label>Base Character ATK <span class="info" data-tip="Character's base ATK before gear. Used for ATK substat calculation.">ⓘ</span></label><input id="baseChar" value="929"></div>
+      <div class="field"><label>Base Weapon ATK <span class="info" data-tip="Weapon's base ATK. Added to character base for ATK substat scaling.">ⓘ</span></label><input id="baseWep" value="713"></div>
+    </div>
+
+    <div class="card">
+      <h3>Crit Rate Column</h3>
+      <div class="field"><label>Stat Screen CR (%) <span class="info" data-tip="Crit Rate shown on your stat screen before combat buffs.">ⓘ</span></label><input id="cr" value="100"></div>
+      <div class="field"><label>Combat CR Buff (%) <span class="info" data-tip="Extra Crit Rate gained only in combat. Total CR is capped at 100%.">ⓘ</span></label><input id="crBuff" value="0"></div>
+    </div>
+
+    <div class="card">
+      <h3>Crit Damage Column</h3>
+      <div class="field"><label>Stat Screen CD (%) <span class="info" data-tip="Crit Damage shown on your stat screen before combat buffs.">ⓘ</span></label><input id="cd" value="287"></div>
+      <div class="field"><label>Combat CD Buff (%) <span class="info" data-tip="Extra Crit Damage gained only in combat.">ⓘ</span></label><input id="cdBuff" value="0"></div>
+    </div>
+  </div>
+
+  <div class="actions"><button onclick="calculate()">Calculate</button></div>
+
+  <div class="results" id="out"></div>
+</div>
+
+<script>
+// ATK substat is defined as 3% of (base character ATK + base weapon ATK)
+const SUB_CR = 2.4;
+const SUB_CD = 4.8;
+
+function effective(A, p, F, CR, CD){
+  return (A*(1+p)+F)*(1+CR*CD);
+}
+
+function calculate(){
+  let A = +atk.value;
+  let p = +atkPct.value/100;
+  let F = +flatAtk.value;
+  let baseCharAtk = +baseChar.value;
+  let baseWepAtk = +baseWep.value;
+  let baseAtk = baseCharAtk + baseWepAtk;
+  let deltaFromBase = baseAtk * 0.03;
+
+  let CR = (+cr.value + +crBuff.value)/100;
+  CR = Math.min(1, Math.max(0, CR));
+  let CD = (+cd.value + +cdBuff.value)/100;
+
+  let base = effective(A,p,F,CR,CD);
+
+  let atkTest = effective(A + deltaFromBase, p, F, CR, CD);
+  let crTestCR = Math.min(1, CR + SUB_CR/100);
+  let crTest = effective(A,p,F,crTestCR,CD);
+  let cdTest = effective(A,p,F,CR,(CD+SUB_CD/100));
+
+  let atkGain = (atkTest/base-1)*100;
+  let crGain = (crTest/base-1)*100;
+  let cdGain = (cdTest/base-1)*100;
+
+  out.innerHTML = `
+    <span class="pill">ATK substat adds +${(deltaFromBase).toFixed(2)} (3% of base char + weapon)</span>
+    <h3>Relative Damage Increase per 1 Substat</h3>
+    <div class="kpi">
+      <div class="box">ATK Substat<br><b>+${atkGain.toFixed(2)}%</b></div>
+      <div class="box">CR Substat<br><b>+${crGain.toFixed(2)}%</b></div>
+      <div class="box">CD Substat<br><b>+${cdGain.toFixed(2)}%</b></div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
